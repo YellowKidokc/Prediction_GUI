@@ -1,0 +1,13 @@
+{
+  "name": "cpt_sequence",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "CPTEngine",
+  "target": "next_subject",
+  "describe": "Compact Prediction Tree over subject sequences (pip: cpt). Lossless next-item from the last k subjects.",
+  "author": "harness",
+  "status": "shadow",
+  "pip": [
+    "cpt"
+  ]
+}

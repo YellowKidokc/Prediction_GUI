@@ -1,0 +1,1 @@
+{"name": "recency_baseline", "kind": "library", "entry": "engine.py", "class": "RecencyBaseline", "target": "next_subject", "describe": "Half-life weighted most-common value. The second floor.", "author": "harness", "status": "baseline"} 

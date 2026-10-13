@@ -1,0 +1,13 @@
+{
+  "name": "river_online",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "RiverOnline",
+  "target": "next_subject",
+  "describe": "Online Naive Bayes (pip: river): P(next | prev, hour, weekday, context). Learns one event at a time.",
+  "author": "harness",
+  "status": "shadow",
+  "pip": [
+    "river"
+  ]
+}

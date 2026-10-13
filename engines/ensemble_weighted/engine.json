@@ -1,0 +1,11 @@
+{
+  "name": "ensemble_weighted",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "EnsembleWeighted",
+  "target": "next_subject",
+  "describe": "Hit-rate-weighted vote over every other engine. The combiner from the spec. No download.",
+  "author": "harness",
+  "status": "shadow",
+  "pip": []
+}

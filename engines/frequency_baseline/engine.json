@@ -1,0 +1,1 @@
+{"name": "frequency_baseline", "kind": "library", "entry": "engine.py", "class": "FrequencyBaseline", "target": "next_subject", "describe": "Most-common value. The floor every engine must beat.", "author": "harness", "status": "baseline"} 
