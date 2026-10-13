@@ -30,9 +30,14 @@ class Runner:
             if "error" in meta:
                 self.errors[meta["name"]] = meta["error"]; continue
             try:
-                self.engines[meta["name"]] = load(meta)
+                eng = load(meta)
+                self.engines[meta["name"]] = eng
+                target = eng.target
             except Exception as e:  # noqa: BLE001
                 self.errors[meta["name"]] = str(e)
+                target = meta.get("target", "?")
+            # the scoreboard reads the ledger's engine table — keep it in step with the folder
+            self.ledger.register_engine(meta["name"], meta["folder"], meta.get("kind", "library"), target, meta)
         self.refit()
 
     def refit(self) -> None:
@@ -77,6 +82,18 @@ class Runner:
         key = context_key_of(context, self.context_keys)
         targets = {target} if target else {e.target for e in self.engines.values()}
         return sum(self.ledger.resolve(key, t, outcome) for t in targets)
+
+    def resolve_event(self, context: dict[str, Any], event: Event) -> int:
+        """Score open predictions from a real event, per target: next_subject is
+        scored against event.subject, next_<field> against event.context[<field>]."""
+        key = context_key_of(context, self.context_keys)
+        n = 0
+        for t in {e.target for e in self.engines.values()}:
+            field = t[5:] if t.startswith("next_") else t
+            outcome = event.subject if field == "subject" else str(event.context.get(field, "") or "")
+            if outcome:
+                n += self.ledger.resolve(key, t, outcome)
+        return n
 
     def scoreboard(self) -> list[dict[str, Any]]:
         return self.ledger.scoreboard()

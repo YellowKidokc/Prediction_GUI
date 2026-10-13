@@ -60,7 +60,7 @@ def load(meta: dict[str, Any]) -> Engine:
         raise RuntimeError(f"{meta['name']}: kind={meta.get('kind')} needs a wrapper engine.py before it can run in the loop")
     py_file = Path(meta["folder"]) / meta.get("entry", "engine.py")
     cls = _load_class(py_file, meta.get("class", "Engine"))
-    inst = cls()
+    inst = cls(**meta.get("params", {}))    # engine.json "params" -> constructor kwargs
     inst.name = meta["name"]
     inst.target = meta.get("target", inst.target)
     return inst

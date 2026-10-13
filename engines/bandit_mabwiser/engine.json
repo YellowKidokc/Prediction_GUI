@@ -1,0 +1,13 @@
+{
+  "name": "bandit_mabwiser",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "BanditMabwiser",
+  "target": "next_subject",
+  "describe": "Contextual bandit, LinUCB (pip: mabwiser). Ranks the top arms by expected reward given prev subject + time of day.",
+  "author": "harness",
+  "status": "shadow",
+  "pip": [
+    "mabwiser"
+  ]
+}

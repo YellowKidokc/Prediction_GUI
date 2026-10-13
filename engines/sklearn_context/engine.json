@@ -1,0 +1,13 @@
+{
+  "name": "sklearn_context",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "SklearnContext",
+  "target": "next_subject",
+  "describe": "Logistic regression (pip: scikit-learn): P(next | prev, hour, weekday, context). The boring control that often wins.",
+  "author": "harness",
+  "status": "shadow",
+  "pip": [
+    "scikit-learn"
+  ]
+}
