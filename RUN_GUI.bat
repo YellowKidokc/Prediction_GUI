@@ -1,4 +1,6 @@
 @echo off
 cd /d "%~dp0"
-python gui\app.py
+set PY=python
+if exist .venv\Scripts\python.exe set PY=.venv\Scripts\python.exe
+%PY% gui\app.py
 pause

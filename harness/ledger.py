@@ -75,7 +75,8 @@ class Ledger:
             "SELECT id, top_value FROM predictions WHERE context_key=? AND target=? AND resolved_at IS NULL",
             (context_key, target)).fetchall()
         for r in rows:
-            correct = 1 if (r["top_value"] or "") == outcome else 0
+            # an abstention (no candidates) is closed but never scored, hit or miss
+            correct = None if r["top_value"] is None else (1 if r["top_value"] == outcome else 0)
             self.conn.execute(
                 "UPDATE predictions SET outcome=?, was_correct=?, resolved_at=? WHERE id=?",
                 (outcome, correct, utc_now(), r["id"]))
@@ -92,7 +93,7 @@ class Ledger:
         out = []
         for r in self.conn.execute("SELECT name, status, target FROM engines ORDER BY name"):
             rows = self.conn.execute(
-                "SELECT was_correct FROM predictions WHERE engine=? AND resolved_at IS NOT NULL "
+                "SELECT was_correct FROM predictions WHERE engine=? AND resolved_at IS NOT NULL AND was_correct IS NOT NULL "
                 "ORDER BY resolved_at DESC LIMIT ?", (r["name"], last_n)).fetchall()
             total = len(rows)
             hits = sum(1 for x in rows if x["was_correct"])

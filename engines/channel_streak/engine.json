@@ -1,0 +1,11 @@
+{
+  "name": "channel_streak",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "ChannelStreak",
+  "target": "next_channel",
+  "describe": "Three in a row on one channel -> predict that channel again. Silent until the yt worker fills context.channel.",
+  "author": "harness",
+  "status": "baseline",
+  "params": {"field": "channel", "streak": 3}
+}

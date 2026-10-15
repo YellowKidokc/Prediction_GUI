@@ -1,0 +1,6 @@
+# Harness core, GUI and baselines need nothing beyond the standard library.
+# These are for the downloaded engines; any that fail to install just show as "not available".
+cpt
+river
+scikit-learn
+mabwiser

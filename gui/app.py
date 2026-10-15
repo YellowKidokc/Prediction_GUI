@@ -32,7 +32,7 @@ class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Prediction_GUI — shadow harness")
-        self.geometry("1180x720")
+        self.geometry("1440x760")
         self.runner = Runner(context_keys=("subject",))
         self.engine_vars: dict[str, tk.BooleanVar] = {}
         self._build()
@@ -70,13 +70,18 @@ class App(tk.Tk):
         res = ttk.Labelframe(right, text="Outcome arrived", padding=6); res.pack(fill="x")
         ttk.Label(res, text="what actually happened (value):").pack(anchor="w")
         self.outcome = ttk.Entry(res); self.outcome.pack(fill="x")
+        ttk.Label(res, text="which target it answers (blank = every target):").pack(anchor="w")
+        self.target_var = tk.StringVar(value="next_subject")
+        self.target_box = ttk.Combobox(res, textvariable=self.target_var); self.target_box.pack(fill="x")
         ttk.Button(res, text="Resolve → score open predictions for this situation", command=self.resolve).pack(anchor="e", pady=4)
         sb = ttk.Labelframe(right, text="Scoreboard (last 200 resolved)", padding=6); sb.pack(fill="both", expand=True)
         scols = ("engine", "status", "scored", "hits", "hit_rate", "pending")
         self.score = ttk.Treeview(sb, columns=scols, show="headings", height=12)
-        for c, w in zip(scols, (150, 70, 60, 50, 70, 60)):
+        for c, w in zip(scols, (130, 60, 50, 40, 60, 55)):
             self.score.heading(c, text=c); self.score.column(c, width=w, anchor="center")
         self.score.pack(fill="both", expand=True)
+        # panes ignore weights on first draw; give the scoreboard room for every column
+        self.after(100, lambda: body.sashpos(1, max(400, self.winfo_width() - 470)))
 
         self.log = tk.Text(self, height=6, state="disabled", bg="#111", fg="#ccc"); self.log.pack(fill="x")
 
@@ -95,10 +100,14 @@ class App(tk.Tk):
         for name, err in self.runner.errors.items():
             ttk.Label(self.engine_box, text=f"✗ {name}: {err[:70]}", foreground="#c44").pack(anchor="w")
         self.lbl_events.configure(text=f"events: {self.runner.ledger.event_count()}")
+        self._targets()
         self.score.delete(*self.score.get_children())
         for row in self.runner.scoreboard():
             self.score.insert("", "end", values=(row["engine"], row["status"], row["scored"], row["hits"],
                                                  "" if row["hit_rate"] is None else f"{row['hit_rate']:.0%}", row["pending"]))
+
+    def _targets(self) -> None:
+        self.target_box["values"] = sorted({e.target for e in self.runner.engines.values()})
 
     def reload(self) -> None:
         self.runner.reload_engines(); self.refresh()
@@ -132,7 +141,7 @@ class App(tk.Tk):
         ctx = self._context(); val = self.outcome.get().strip()
         if ctx is None or not val:
             return
-        n = self.runner.resolve(ctx, val)
+        n = self.runner.resolve(ctx, val, target=self.target_var.get() or None)
         self._log(f"resolved {n} predictions with outcome={val!r}"); self.refresh()
 
     def ingest_csv(self) -> None:
@@ -147,12 +156,16 @@ class App(tk.Tk):
         if chrome_history is None:
             messagebox.showerror("chrome", "adapter failed to import"); return
         def work():
+            # read off-thread; ingest on the Tk thread (sqlite connections are thread-bound)
             try:
                 evs = chrome_history.read()
-                n = self.runner.ingest(evs)
-                self.after(0, lambda: (self._log(f"chrome: {len(evs)} youtube visits, {n} new"), self.refresh()))
             except Exception as e:  # noqa: BLE001
-                self.after(0, lambda: messagebox.showerror("chrome", str(e)))
+                msg = str(e)
+                self.after(0, lambda: messagebox.showerror("chrome", msg)); return
+            def done():
+                n = self.runner.ingest(evs)
+                self._log(f"chrome: {len(evs)} youtube visits, {n} new"); self.refresh()
+            self.after(0, done)
         threading.Thread(target=work, daemon=True).start()
         self._log("chrome: reading History (copying first, Chrome holds a lock)…")
 
