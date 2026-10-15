@@ -1,0 +1,10 @@
+{
+  "name": "name_words",
+  "kind": "library",
+  "entry": "engine.py",
+  "class": "NameWords",
+  "target": "next_subject",
+  "describe": "Naive Bayes over the paper's own name words + folder_class. Leave-one-out: never sees the paper it is predicting.",
+  "author": "harness",
+  "status": "shadow"
+}
