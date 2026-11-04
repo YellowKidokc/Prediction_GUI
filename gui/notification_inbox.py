@@ -27,10 +27,10 @@ class NotificationInbox(tk.Toplevel):
             ttk.Button(top, text=label, command=command).pack(side="left", padx=2)
         ttk.Button(top, text="Ask AI about checked batch", command=self.ask_ai).pack(side="right")
 
-        cols = ("check", "number", "current", "proposed", "confidence", "final", "reason", "status")
+        cols = ("check", "number", "current", "proposed", "confidence", "final", "reason", "life", "status")
         self.tree = ttk.Treeview(self, columns=cols, show="headings", selectmode="extended")
-        labels = ("✓", "#", "Current value / file name", "Prediction", "Confidence", "Final value (editable)", "Reason", "Decision")
-        widths = (38, 45, 250, 230, 80, 250, 360, 90)
+        labels = ("✓", "#", "Current value / file name", "Prediction", "Confidence", "Final value (editable)", "Reason", "Life", "Decision")
+        widths = (38, 45, 240, 210, 80, 230, 330, 45, 90)
         for c, label, width in zip(cols, labels, widths):
             self.tree.heading(c, text=label); self.tree.column(c, width=width, anchor="w")
         self.tree.pack(fill="both", expand=True, padx=8)
@@ -57,7 +57,7 @@ class NotificationInbox(tk.Toplevel):
                 self.tree.insert("", "end", iid=item["id"], tags=(batch_id, review_band), values=(
                     "☑" if item["id"] in self.checked else "☐", number,
                     payload.get("current_value", item["subject"]), item["proposed_action"], confidence,
-                    item["final_value"] or item["proposed_action"], item["summary"], item["status"]))
+                    item["final_value"] or item["proposed_action"], item["summary"], item["lifecycle_code"], item["status"]))
 
     def click(self, event) -> None:
         if self.tree.identify_region(event.x, event.y) != "cell" or self.tree.identify_column(event.x) != "#1":

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notification-request.v1",
+  "type": "object",
+  "required": ["template", "title", "source", "items"],
+  "properties": {
+    "template": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "message": {"type": "string"},
+    "source": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["info", "normal", "warning", "critical"]},
+    "items": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["subject", "proposed_action"],
+        "properties": {
+          "subject": {"type": "string"},
+          "current_value": {"type": "string"},
+          "proposed_action": {"type": "string"},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "reason": {"type": "string"},
+          "risk_class": {"enum": ["read_only", "additive", "mutation", "canon_authority"]},
+          "auto_approvable": {"type": "boolean"},
+          "evidence": {"type": ["array", "object", "string", "null"]},
+          "metadata": {"type": "object"}
+        }
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS notification_batches (
 CREATE TABLE IF NOT EXISTS notification_items (
   id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, subject TEXT NOT NULL,
   proposed_action TEXT NOT NULL, summary TEXT NOT NULL, payload TEXT NOT NULL,
-  final_value TEXT, status TEXT NOT NULL DEFAULT 'pending', decided_at TEXT, decision_note TEXT,
+  final_value TEXT, lifecycle_code TEXT NOT NULL DEFAULT 'PD', status TEXT NOT NULL DEFAULT 'pending', decided_at TEXT, decision_note TEXT,
   FOREIGN KEY(batch_id) REFERENCES notification_batches(id));
 CREATE INDEX IF NOT EXISTS ix_notification_items_batch ON notification_items(batch_id, status);
 CREATE TABLE IF NOT EXISTS notification_decisions (
@@ -34,6 +34,8 @@ class NotificationStore:
         columns = {row[1] for row in self.conn.execute("PRAGMA table_info(notification_items)")}
         if "final_value" not in columns:
             self.conn.execute("ALTER TABLE notification_items ADD COLUMN final_value TEXT")
+        if "lifecycle_code" not in columns:
+            self.conn.execute("ALTER TABLE notification_items ADD COLUMN lifecycle_code TEXT NOT NULL DEFAULT 'PD'")
         self.conn.commit()
 
     def add(self, batch: NotificationBatch) -> str:
@@ -42,8 +44,8 @@ class NotificationStore:
             (batch.id, batch.template, batch.title, batch.message, batch.source,
              batch.severity, batch.created_at, batch.created_at))
         self.conn.executemany(
-            "INSERT INTO notification_items(id,batch_id,subject,proposed_action,summary,payload,final_value,status,decided_at,decision_note) "
-            "VALUES (?,?,?,?,?,?,?,'pending',NULL,NULL)",
+            "INSERT INTO notification_items(id,batch_id,subject,proposed_action,summary,payload,final_value,lifecycle_code,status,decided_at,decision_note) "
+            "VALUES (?,?,?,?,?,?,?,'PD','pending',NULL,NULL)",
             [(i.id, batch.id, i.subject, i.proposed_action, i.summary,
               json.dumps(i.payload, ensure_ascii=False), i.proposed_action) for i in batch.items])
         self.conn.commit()
@@ -69,7 +71,7 @@ class NotificationStore:
         now, changed = utc_now(), 0
         for item_id in item_ids:
             cur = self.conn.execute(
-                "UPDATE notification_items SET status=?,decided_at=?,decision_note=? "
+                "UPDATE notification_items SET status=?,lifecycle_code='RD',decided_at=?,decision_note=? "
                 "WHERE id=? AND status='pending'", (decision, now, note, item_id))
             if cur.rowcount:
                 changed += 1
@@ -85,6 +87,20 @@ class NotificationStore:
             status = "pending" if pending else "decided"
             self.conn.execute("UPDATE notification_batches SET status=?,updated_at=? WHERE id=?",
                               (status, now, batch_id))
+        self.conn.commit()
+        return changed
+
+    def reconcile(self, item_ids: Iterable[str], actor: str = "system", note: str = "") -> int:
+        now, changed = utc_now(), 0
+        for item_id in item_ids:
+            cur = self.conn.execute(
+                "UPDATE notification_items SET lifecycle_code='RC' WHERE id=? AND lifecycle_code='RD'",
+                (item_id,))
+            if cur.rowcount:
+                changed += 1
+                self.conn.execute(
+                    "INSERT INTO notification_decisions(item_id,decision,actor,note,created_at) VALUES (?,?,?,?,?)",
+                    (item_id, "reconciled", actor, note, now))
         self.conn.commit()
         return changed
 

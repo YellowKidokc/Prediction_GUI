@@ -4,3 +4,4 @@ cpt
 river
 scikit-learn
 mabwiser
+openpyxl
