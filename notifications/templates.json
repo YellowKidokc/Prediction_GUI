@@ -1,0 +1,20 @@
+{
+  "approval_batch": {
+    "label": "Approval batch",
+    "purpose": "One or more simulated changes awaiting a human decision.",
+    "allowed_actions": ["approved", "held", "rejected"],
+    "required_item_fields": ["subject", "proposed_action", "summary"]
+  },
+  "blocked_question": {
+    "label": "Blocked question",
+    "purpose": "Work stopped safely because evidence or authority is missing.",
+    "allowed_actions": ["answered", "held"],
+    "required_item_fields": ["subject", "summary"]
+  },
+  "incident_correction": {
+    "label": "Incident or correction",
+    "purpose": "An error, attempted correction, and its evidence trail.",
+    "allowed_actions": ["approved", "held", "rejected"],
+    "required_item_fields": ["subject", "proposed_action", "summary"]
+  }
+}

@@ -21,6 +21,8 @@ sys.path.insert(0, str(ROOT))
 
 from harness.runner import Runner                      # noqa: E402
 from harness.adapters import csv_events                # noqa: E402
+from notifications import NotificationEngine, NotificationItem, NotificationTemplate  # noqa: E402
+from gui.notification_inbox import NotificationInbox   # noqa: E402
 
 try:
     from harness.adapters import chrome_history         # noqa: E402
@@ -34,6 +36,9 @@ class App(tk.Tk):
         self.title("Prediction_GUI — shadow harness")
         self.geometry("1440x760")
         self.runner = Runner(context_keys=("subject",))
+        self.notifications = NotificationEngine(self.runner.ledger)
+        self.last_predictions = []
+        self.last_context = {}
         self.engine_vars: dict[str, tk.BooleanVar] = {}
         self._build()
         self.refresh()
@@ -44,6 +49,7 @@ class App(tk.Tk):
         ttk.Button(top, text="Reload engines", command=self.reload).pack(side="left")
         ttk.Button(top, text="Ingest CSV…", command=self.ingest_csv).pack(side="left", padx=4)
         ttk.Button(top, text="Ingest Chrome YouTube history", command=self.ingest_chrome).pack(side="left", padx=4)
+        ttk.Button(top, text="Notification inbox", command=self.open_inbox).pack(side="left", padx=12)
         self.lbl_events = ttk.Label(top, text="events: 0"); self.lbl_events.pack(side="right")
 
         body = ttk.Panedwindow(self, orient="horizontal"); body.pack(fill="both", expand=True)
@@ -58,7 +64,9 @@ class App(tk.Tk):
         sit = ttk.Labelframe(mid, text="Situation (context as JSON)  — e.g. {\"subject\": \"\", \"hour\": 21}", padding=6)
         sit.pack(fill="x")
         self.ctx = tk.Text(sit, height=3); self.ctx.insert("1.0", "{\"hour\": 21, \"dow\": 1}"); self.ctx.pack(fill="x")
-        ttk.Button(sit, text="Shadow run → every checked engine predicts", command=self.shadow).pack(anchor="e", pady=4)
+        actions = ttk.Frame(sit); actions.pack(anchor="e", pady=4)
+        ttk.Button(actions, text="Shadow run → every checked engine predicts", command=self.shadow).pack(side="left")
+        ttk.Button(actions, text="Send results to approval inbox", command=self.send_predictions).pack(side="left", padx=4)
         cols = ("engine", "target", "top", "conf", "guidance")
         self.tree = ttk.Treeview(mid, columns=cols, show="headings", height=14)
         for c, w in zip(cols, (150, 110, 220, 60, 420)):
@@ -135,7 +143,32 @@ class App(tk.Tk):
             t = p.top
             self.tree.insert("", "end", values=(p.engine, p.target, t.value if t else "—",
                                                 f"{t.confidence:.2f}" if t else "", p.guidance))
+        self.last_predictions, self.last_context = preds, ctx
         self._log(f"shadow: {len(preds)} predictions logged for {ctx}"); self.refresh()
+
+    def open_inbox(self) -> None:
+        NotificationInbox(self, self.notifications)
+
+    def send_predictions(self) -> None:
+        if not self.last_predictions:
+            messagebox.showinfo("Approval inbox", "Run a shadow simulation first."); return
+        items = []
+        for p in self.last_predictions:
+            top = p.top
+            items.append(NotificationItem(
+                subject=f"{p.engine}: {p.target}",
+                proposed_action=top.value if top else "abstain",
+                summary=p.guidance or ("Engine stopped without guessing" if not top else ""),
+                payload={"prediction_id": p.id, "confidence": top.confidence if top else None,
+                         "current_value": self.last_context.get("subject", ""),
+                         "context": self.last_context}))
+        batch_id = self.notifications.submit(
+            NotificationTemplate.APPROVAL_BATCH,
+            "Prediction simulation ready for review",
+            "No action has been applied. Review all results together or individually.",
+            "Prediction_GUI.shadow", items)
+        self._log(f"notification batch {batch_id[:12]}: {len(items)} simulated proposals")
+        self.open_inbox()
 
     def resolve(self) -> None:
         ctx = self._context(); val = self.outcome.get().strip()

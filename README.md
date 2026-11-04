@@ -43,6 +43,33 @@ clipboard mode to tag a one-word `topic` from your local Ollama.
 New engine: copy `engines/_TEMPLATE`, fill `fit()` and `predict()`, run `INTAKE.bat` on the folder.
 `engine.json` may carry `"params": {...}`; they're passed to the engine's constructor.
 
+## Notification and approval grid
+
+The shadow harness now has a first-class review mailbox. Click **Notification inbox** in the GUI.
+Every source uses the same spreadsheet-shaped envelope: current value, proposal, confidence,
+editable final value, reason, and decision. Rows can be checked individually or all at once and
+then approved, held, or rejected as a batch.
+
+Starter templates live in `notifications/templates.json`; add another JSON entry to extend the
+catalog without changing Python. The included templates are approval batch, blocked question,
+and incident/correction. They are examples, not a fixed limit.
+
+Confidence bands are visible: green >= 90%, amber 60-89%, red < 60%, gray unknown. Amber batches
+automatically request concise advice through Forge (`FORGE_URL`, default `http://127.0.0.1:8790`),
+but AI advice never decides an item. High confidence only auto-approves when the caller explicitly
+marks an item `risk_class=read_only|additive` and `auto_approvable=true`. Mutations and canon
+decisions always remain pending.
+
+```
+python -m notifications.cli demo
+python -m notifications.cli list
+python -m notifications.cli import-names naming_plan.csv
+```
+
+Naming plans from FIS, Coco, or another program use `current_path, proposed_name, confidence,
+reason`. They become editable rows in the same grid. Naming is a mutation class, so even a 100%
+confidence proposal is never auto-applied.
+
 ## Scoring rules
 
 - An engine that returns no candidates **abstains**. The prediction is closed on resolve but never
