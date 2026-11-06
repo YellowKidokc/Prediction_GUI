@@ -23,6 +23,7 @@ from harness.runner import Runner                      # noqa: E402
 from harness.adapters import csv_events                # noqa: E402
 from notifications import NotificationEngine, NotificationItem, NotificationTemplate  # noqa: E402
 from gui.notification_inbox import NotificationInbox   # noqa: E402
+from gui.nlp_window import NLPWindow                   # noqa: E402
 
 try:
     from harness.adapters import chrome_history         # noqa: E402
@@ -50,6 +51,7 @@ class App(tk.Tk):
         ttk.Button(top, text="Ingest CSV…", command=self.ingest_csv).pack(side="left", padx=4)
         ttk.Button(top, text="Ingest Chrome YouTube history", command=self.ingest_chrome).pack(side="left", padx=4)
         ttk.Button(top, text="Notification inbox", command=self.open_inbox).pack(side="left", padx=12)
+        ttk.Button(top, text="NLP pipelines (DeepSeek)", command=lambda: NLPWindow(self, self.notifications)).pack(side="left")
         self.lbl_events = ttk.Label(top, text="events: 0"); self.lbl_events.pack(side="right")
 
         body = ttk.Panedwindow(self, orient="horizontal"); body.pack(fill="both", expand=True)

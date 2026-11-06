@@ -1,4 +1,4 @@
-"""intake.py — drop a folder under engines/, run this on it, and it gets understood.
+r"""intake.py — drop a folder under engines/, run this on it, and it gets understood.
 
   python intake\intake.py engines\my_new_engine
 

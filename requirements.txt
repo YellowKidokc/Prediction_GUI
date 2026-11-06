@@ -5,3 +5,4 @@ river
 scikit-learn
 mabwiser
 openpyxl
+pypdf

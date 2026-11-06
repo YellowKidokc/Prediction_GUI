@@ -83,3 +83,36 @@ confidence proposal is never auto-applied.
 ```
 python tests\smoke.py
 ```
+
+## NLP pipelines (DeepSeek plans, you lock)
+
+GUI → **NLP pipelines (DeepSeek)**, or `NLP.bat <command>`.
+
+1. **Plan**: pick a folder and type a goal. The program profiles the folder (file types, sizes,
+   frontmatter and wikilink counts, five short samples). DeepSeek gets that profile plus the
+   step catalog and picks the steps and their settings. It never sees the whole corpus at this stage.
+2. **Run**: results go to `data/nlp/<name>/runs/v<N>_<time>/` as `results.json` and `report.md`.
+   "Run sample" runs 20 documents first, so a bad plan costs seconds, not an hour.
+3. **Revise**: write what's wrong. DeepSeek gets the old plan, your feedback, and sample output, and
+   writes the next version. You can also edit the plan JSON by hand. Every version is kept.
+4. **Lock**: freezes that version. Each run also drops a row in the Notification inbox, and
+   approving the row locks that version.
+
+Steps: `stats, markdown_structure, keywords, entities, near_duplicates` (standard library),
+`clusters` (scikit-learn), and `summarize, classify, extract` (DeepSeek). Step names the planner
+invents are dropped. If DeepSeek can't be reached, Plan falls back to a rule-based plan and says so.
+
+| Setting | Default |
+|---|---|
+| `DEEPSEEK_BACKEND` | `ollama` (local). `api` = api.deepseek.com |
+| `DEEPSEEK_MODEL` | `deepseek-r1:8b` (Ollama) / `deepseek-chat` (API) |
+| `DEEPSEEK_API_KEY` | needed only for `api` |
+| `OLLAMA_URL` | `http://127.0.0.1:11434` |
+
+```
+python -m nlp.cli plan vault "O:\_Theophysics_v5\00_Canonical" "find duplicates and group by law"
+python -m nlp.cli run vault --limit 20
+python -m nlp.cli revise vault "classify into the 10 laws instead of topics"
+python -m nlp.cli lock vault
+python tests\test_nlp.py
+```
