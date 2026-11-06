@@ -3,5 +3,8 @@ cd /d "%~dp0"
 if not exist .venv\Scripts\python.exe python -m venv .venv
 .venv\Scripts\python.exe -m pip install --upgrade pip
 .venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m spacy download en_core_web_sm
 .venv\Scripts\python.exe tests\smoke.py
+.venv\Scripts\python.exe tests\test_nlp.py
+.venv\Scripts\python.exe -m tests.test_notifications
 pause

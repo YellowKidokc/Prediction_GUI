@@ -85,8 +85,20 @@ class NotificationInbox(tk.Toplevel):
         ids = [iid for iid in self.checked if self.tree.exists(iid)]
         if not ids: return
         changed = self.engine.store.decide(ids, decision)
+        if decision == "approved":
+            self._apply_nlp_locks(ids)
         self.checked.difference_update(ids); self.refresh()
         messagebox.showinfo("Approval grid", f"{changed} item(s) marked {decision}.", parent=self)
+
+    def _apply_nlp_locks(self, ids) -> None:
+        """An approved 'NLP run ready' row locks that pipeline at the version that ran."""
+        from nlp.pipeline import Pipeline
+        rows = self.engine.store.conn.execute(
+            f"SELECT payload FROM notification_items WHERE id IN ({','.join('?' * len(ids))})", list(ids)).fetchall()
+        for r in rows:
+            p = json.loads(r["payload"] or "{}")
+            if p.get("pipeline") and p.get("version"):
+                Pipeline(p["pipeline"]).lock(int(p["version"]))
 
     def _one_batch(self) -> str | None:
         ids = self.checked or set(self.tree.selection())
