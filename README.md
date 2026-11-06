@@ -105,7 +105,7 @@ invents are dropped. If DeepSeek can't be reached, Plan falls back to a rule-bas
 | Setting | Default |
 |---|---|
 | `DEEPSEEK_BACKEND` | `ollama` (local). `api` = api.deepseek.com |
-| `DEEPSEEK_MODEL` | `deepseek-r1:8b` (Ollama) / `deepseek-chat` (API) |
+| `DEEPSEEK_MODEL` | `deepseek-r1:8b` (Ollama; if that exact tag is missing, the first installed `deepseek-r1:*` is used) / `deepseek-chat` (API). Faster for per-note summaries: `qwen3:4b-instruct` |
 | `DEEPSEEK_API_KEY` | needed only for `api` |
 | `OLLAMA_URL` | `http://127.0.0.1:11434` |
 

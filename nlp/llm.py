@@ -27,6 +27,22 @@ def _post(url: str, body: dict, headers: dict, timeout: int) -> dict:
         raise LLMUnavailable(f"{url}: {exc}") from exc
 
 
+def ollama_model() -> str:
+    """Exact name if installed; else the first installed tag of the same family
+    (deepseek-r1:8b -> deepseek-r1:latest). Ollama matches names exactly."""
+    want = os.environ.get("DEEPSEEK_MODEL", "deepseek-r1:8b")
+    try:
+        url = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434") + "/api/tags"
+        with urllib.request.urlopen(url, timeout=5) as r:
+            names = [m["name"] for m in json.loads(r.read().decode("utf-8")).get("models", [])]
+    except Exception:  # noqa: BLE001
+        return want
+    if want in names or f"{want}:latest" in names:
+        return want
+    family = want.split(":")[0]
+    return next((n for n in names if n.split(":")[0] == family), want)
+
+
 def backend() -> str:
     return os.environ.get("DEEPSEEK_BACKEND", "ollama").lower()
 
@@ -43,7 +59,7 @@ def chat(system: str, user: str, timeout: int = 180) -> str:
         text = body["choices"][0]["message"]["content"]
     else:
         body = _post(os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434") + "/api/chat",
-                     {"model": os.environ.get("DEEPSEEK_MODEL", "deepseek-r1:8b"), "messages": msgs,
+                     {"model": ollama_model(), "messages": msgs,
                       "stream": False, "options": {"temperature": 0.2}}, {}, timeout)
         text = body["message"]["content"]
     return re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()  # r1 reasoning trace

@@ -6,3 +6,6 @@ scikit-learn
 mabwiser
 openpyxl
 pypdf
+# Optional, better entities (the step works without it via a heuristic). After install:
+#   python -m spacy download en_core_web_sm
+spacy
