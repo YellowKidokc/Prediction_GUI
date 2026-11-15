@@ -1,0 +1,1 @@
+Inference implementation consolidated into David-OSv3/prediction; active GUI imports the installed canonical package.
