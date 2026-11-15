@@ -31,6 +31,15 @@ class FISReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError): decide(second, self.plan, ['r1'], 'approved', 'someone else')
         self.assertTrue(meq_namer_string({'G':3}).startswith('G3 M0'))
 
+    def test_receipt_cannot_claim_a_competing_actors_choice(self):
+        from unittest.mock import patch
+        original_decide = self.engine.store.decide
+        def competing(ids, decision, actor, note):
+            return original_decide(ids, decision, 'other recorded actor', note)
+        with patch.object(self.engine.store, 'decide', side_effect=competing):
+            with self.assertRaisesRegex(ValueError, 'recorded decision differs'):
+                decide(self.engine, self.plan, ['r1'], 'approved', 'David')
+
     def test_edits_holds_and_modified_plan_cannot_approve(self):
         batch = submit_plan(self.engine, self.plan)
         with self.assertRaises(ValueError): decide(self.engine, self.plan, ['held'], 'approved', 'David')

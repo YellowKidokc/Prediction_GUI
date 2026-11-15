@@ -43,4 +43,10 @@ def decide(engine, plan, rows, decision, actor, note=''):
         engine.ledger.conn.execute('SELECT batch_id FROM fis_plan_imports WHERE plan_hash=?', (plan['hash'],)).fetchone()[0])}
     if any(actual.get(key) != decision for key in ids):
         raise ValueError('decision conflicts with a previously recorded choice')
+    # Another GUI/API process can win between the initial read and update.
+    # Never return a receipt claiming an actor/note that was not recorded.
+    for key in ids:
+        recorded = engine.ledger.conn.execute('SELECT decision,actor,note FROM notification_decisions WHERE item_id=? ORDER BY id DESC LIMIT 1', (key,)).fetchone()
+        if recorded is None or tuple(recorded) != (decision, actor, note):
+            raise ValueError('recorded decision differs; reload the review inbox')
     return receipt
