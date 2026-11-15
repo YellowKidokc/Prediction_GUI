@@ -116,3 +116,10 @@ python -m nlp.cli revise vault "classify into the 10 laws instead of topics"
 python -m nlp.cli lock vault
 python tests\test_nlp.py
 ```
+
+## Consolidated ownership
+
+Install `requirements-david-os.txt` before launching this version. Prediction
+implementations now come from David-OSv3; this repository displays results and
+records explicit approvals. See [ARCHITECTURE.md](ARCHITECTURE.md) for the FIS
+plan/receipt boundary and preserved ledger paths.
