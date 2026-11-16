@@ -1,18 +1,56 @@
 # Prediction_GUI
 
+## Clone → setup → run
+
+Python 3.11+ and Git are required. The clone can live in any folder, including a
+folder with spaces or a network share. The virtual environment lives separately
+on local disk: `%LOCALAPPDATA%/david-os/venvs` on Windows, `~/.cache/david-os/venvs`
+on Linux, or `~/Library/Caches/david-os/venvs` on macOS. Each clone gets its own
+stable environment. Set `DAVID_OS_VENV` to override it with a local disk path;
+setup rejects network mounts on Linux and non-fixed drives on Windows.
+
+```sh
+git clone --branch cleanup/v3-consolidation https://github.com/YellowKidokc/Prediction_GUI.git
+cd Prediction_GUI
+python setup_env.py --core
+python run.py
+```
+
+No activation or sibling checkout is required. Windows users can use `py` in place
+of `python`. Re-run setup after moving the clone or updating its dependency pin.
+`python run.py` uses the same local environment from any working directory; give
+its absolute path when calling from outside the clone.
+
+Copy `config.example.yaml` to `config.yaml` if you need custom paths, and set
+`DAVID_OS_CONFIG` to that file's absolute path. Paths inside the YAML resolve
+relative to the YAML file. Environment variables override configured paths.
+`DAVID_OS_STATE_DIR`, `DAVID_OS_REFERENCE_DB`, `DAVID_OS_LEXICON`,
+`THEOPHYSICS_SERIES_FOLDER` and `DAVID_OS_CANON_RULES` override the matching paths.
+`THEOPHYSICS_SERIES_REGISTRY` names an explicit series workbook; matching reports
+a missing workbook until one is configured. `DAVID_OS_REGISTRY` selects the central
+identity SQLite database. No personal corpus or remote disk is required for setup.
+
+API keys and service tokens come from the process environment only. For hosted
+DeepSeek use `DEEPSEEK_BACKEND=api` and `DEEPSEEK_API_KEY`; the default local Ollama
+backend needs no key. Never put keys in YAML, source files, launchers or a token
+JSON file. The optional YAML loader rejects credential fields. `config.yaml` and
+`.env` files are ignored by Git; the application does not load `.env` files.
+
+`SETUP.bat` runs the same setup; all Windows launchers use `run.py` and the local
+environment. Omit `--core` to install optional prediction/NLP libraries too.
+The core GUI needs tkinter (on Debian/Ubuntu: `sudo apt-get install python3-tk`).
+
+The required backend is declared in `requirements-david-os.txt` as a PEP 508
+Git dependency pinned to an immutable David-OS commit. Setup always installs
+this file. Imports use the installed `prediction` and `shared` packages, with no
+sibling-folder lookup or David-OS `PYTHONPATH` requirement. Test with
+`python run.py -m unittest discover -s tests -p 'test_*.py'` and
+`python run.py tests/smoke.py`.
+
+
 A shadow harness for prediction engines. Every engine predicts, every prediction is
 logged, and the ledger scores them against what actually happened. Engines never
 score themselves. The scoreboard decides which engine earns `live`.
-
-## First run (Windows)
-
-```
-SETUP.bat        creates .venv, installs the engine libraries, runs the smoke test
-RUN_GUI.bat      the one window
-```
-
-The harness, GUI and baselines are standard-library only. If an engine's library is
-missing, that engine abstains ("not available"); nothing crashes.
 
 ## Getting events in
 
@@ -81,7 +119,7 @@ confidence proposal is never auto-applied.
 ## Check it
 
 ```
-python tests\smoke.py
+python run.py tests/smoke.py
 ```
 
 ## NLP pipelines (DeepSeek plans, you lock)
@@ -110,7 +148,7 @@ invents are dropped. If DeepSeek can't be reached, Plan falls back to a rule-bas
 | `OLLAMA_URL` | `http://127.0.0.1:11434` |
 
 ```
-python -m nlp.cli plan vault "O:\_Theophysics_v5\00_Canonical" "find duplicates and group by law"
+python -m nlp.cli plan vault "path/to/corpus" "find duplicates and group by law"
 python -m nlp.cli run vault --limit 20
 python -m nlp.cli revise vault "classify into the 10 laws instead of topics"
 python -m nlp.cli lock vault
