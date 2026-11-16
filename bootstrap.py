@@ -50,12 +50,15 @@ def setup():
     py = str(python_path())
     subprocess.run([py, '-m', 'pip', 'install', '--upgrade', 'pip'], check=True, cwd=ROOT)
     if GUI:
-        install = [py, '-m', 'pip', 'install', '-r', str(ROOT / 'requirements-david-os.txt')]
-        if not args.core:
-            install += ['-r', str(ROOT / 'requirements.txt')]
+        # Both revisions share a package version; force reinstall so pip cannot
+        # retain an older commit merely because its version is unchanged.
+        install = [py, '-m', 'pip', 'install', '--upgrade', '--force-reinstall',
+                   '-r', str(ROOT / 'requirements-david-os.txt')]
     else:
         install = [py, '-m', 'pip', 'install', str(ROOT) + ('[test]' if args.test else '')]
     subprocess.run(install, check=True, cwd=ROOT)
+    if GUI and not args.core:
+        subprocess.run([py, '-m', 'pip', 'install', '-r', str(ROOT / 'requirements.txt')], check=True, cwd=ROOT)
     print(f'Environment: {target}\nRun: python run.py')
 
 

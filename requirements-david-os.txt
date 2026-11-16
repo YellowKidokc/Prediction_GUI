@@ -1,3 +1,3 @@
 # Inference, identity and review contracts have one owner. Keep this pinned to
 # the reviewed companion source commit; install alongside requirements.txt.
-david-os @ git+https://github.com/YellowKidokc/David-OSv3.git@fa342c71f493b63971d0e680977ac416340fa3d8
+david-os @ git+https://github.com/YellowKidokc/David-OSv3.git@5d6d2f7d4b906e9e6eebf06f6fed9d9ed46cab4a
