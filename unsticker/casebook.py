@@ -25,10 +25,24 @@ def _append(path: Path, row: dict) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def all_cases() -> list[dict]:
-    if not BOOK.exists():
+PROJECT_BOOK: Path | None = None   # <project>/.unsticker/casebook.jsonl
+
+
+def set_project(root: Path) -> None:
+    """Fixes solved in a project are written to that project's own casebook, so
+    they travel with it. Lookups read the project book plus the central one."""
+    global PROJECT_BOOK
+    PROJECT_BOOK = root / ".unsticker" / "casebook.jsonl"
+
+
+def _read(path: Path | None) -> list[dict]:
+    if not path or not path.exists():
         return []
-    return [json.loads(l) for l in BOOK.read_text(encoding="utf-8").splitlines() if l.strip()]
+    return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+
+def all_cases() -> list[dict]:
+    return _read(PROJECT_BOOK) + _read(BOOK)
 
 
 def exact(signature: str) -> list[dict]:
@@ -45,7 +59,7 @@ def learnings(code: str, limit: int = 8) -> list[dict]:
 
 
 def record(stop: dict, fix_summary: str, edits: list[dict], solved_by: str, approved_by: str) -> None:
-    _append(BOOK, {"code": stop["code"], "signature": stop["signature"], "why": stop["why"],
+    _append(PROJECT_BOOK or BOOK, {"code": stop["code"], "signature": stop["signature"], "why": stop["why"],
                    "fix_summary": fix_summary, "edits": edits,
                    "solved_by": solved_by, "approved_by": approved_by})
 

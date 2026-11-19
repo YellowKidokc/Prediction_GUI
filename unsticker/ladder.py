@@ -144,6 +144,10 @@ def _attempt(root: Path, stop: StopRecord, writer, approver, prior: list[dict],
 def unstick(root: Path, cmd: list[str], check: list[str] | None = None,
             max_stops: int = 5, log=print) -> bool:
     root = root.resolve()
+    casebook.set_project(root)
+    n_local = fixers.load_project(root)
+    if n_local:
+        log(f"[unsticker] loaded {n_local} project fixer(s) from {root / '.unsticker'}")
     T = tiers()
     ladder = [("jev", T["jev"], T["jev"], 3),
               ("deepseek", T["deepseek"], T["jev"], 2)]
@@ -154,6 +158,8 @@ def unstick(root: Path, cmd: list[str], check: list[str] | None = None,
     for _ in range(max_stops):
         ok, stop, out = detect(cmd, root)
         if ok:
+            if out.strip():
+                log(out.rstrip()[-4000:])
             log("[unsticker] command runs clean.")
             casebook.ledger("clean", cmd=cmd, root=str(root))
             return True
@@ -237,7 +243,8 @@ DRAFTS = Path(__file__).resolve().parent / "fixers" / "drafts"
 def _write_draft_fixer(root: Path, stop: StopRecord, row: dict) -> str:
     """A model solved a code we had no fixer for. Leave a draft for us to turn
     into a general fixer; until then the casebook replays the exact fix."""
-    DRAFTS.mkdir(parents=True, exist_ok=True)
+    drafts = root / ".unsticker" / "drafts"   # project-local; promote to central if general
+    drafts.mkdir(parents=True, exist_ok=True)
     name = f"{stop.code.replace('.', '_')}_{stop.signature}.py"
     body = f'''"""DRAFT fixer, written by {row["by"]}, approved by {row["approver"]}.
 Code: {stop.code}
@@ -254,8 +261,8 @@ from unsticker.fixers import Fix, fixer
 def draft_{stop.signature}(stop, root):
     return None
 '''
-    (DRAFTS / name).write_text(body, encoding="utf-8")
-    return f"fixers/drafts/{name}"
+    (drafts / name).write_text(body, encoding="utf-8")
+    return str(drafts / name)
 
 
 def _backup_dir(root: Path) -> Path:

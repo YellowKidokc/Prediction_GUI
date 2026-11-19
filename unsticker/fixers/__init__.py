@@ -47,6 +47,32 @@ def for_code(code: str) -> list[Callable]:
     return REGISTRY.get(code, []) + REGISTRY.get("*", [])
 
 
+_loaded_projects: set[str] = set()
+
+
+def load_project(root) -> int:
+    """Load <project>/.unsticker/fixers.py (and fixers/*.py) so project-only fixes
+    live with the project. Project fixers register like central ones and run first."""
+    from pathlib import Path
+    import importlib.util
+    base = Path(root) / ".unsticker"
+    files = [base / "fixers.py"] + sorted((base / "fixers").glob("*.py"))
+    n = 0
+    for f in files:
+        if not f.is_file() or str(f) in _loaded_projects:
+            continue
+        before = {k: list(v) for k, v in REGISTRY.items()}
+        spec = importlib.util.spec_from_file_location(f"unsticker_project_{abs(hash(str(f)))}", f)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        for code, fns in REGISTRY.items():  # move the new project fixers to the front
+            new = [fn for fn in fns if fn not in before.get(code, [])]
+            REGISTRY[code] = new + [fn for fn in fns if fn not in new]
+            n += len(new)
+        _loaded_projects.add(str(f))
+    return n
+
+
 def _load() -> None:
     for mod in pkgutil.iter_modules(__path__):
         if not mod.name.startswith("_") and mod.name != "drafts":
