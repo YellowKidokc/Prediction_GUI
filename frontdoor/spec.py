@@ -7,6 +7,7 @@ runs. Only job types listed in JOB_TYPES can run; nothing else is possible.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from unsticker.llm import extract_json, tiers
@@ -40,15 +41,26 @@ Use Windows paths exactly as the user wrote them. Do not invent folders."""
 def translate(request: str) -> dict:
     sys_prompt = SYSTEM.format(types=json.dumps(JOB_TYPES, indent=1))
     T = tiers()
-    last_err = ""
+    errors = []
     for model in (T["jev"], T["deepseek"]):
         try:
             spec = extract_json(model.chat(sys_prompt, request, temperature=0.0, max_tokens=800))
             spec["_translated_by"] = model.name
             return validate(spec)
         except Exception as exc:
-            last_err = f"{model.name}: {exc}"
-    raise ValueError(f"could not turn the request into a job spec ({last_err})")
+            errors.append(f"{model.name}: {exc}")
+    raise ValueError("could not turn the request into a job spec:\n- " + "\n- ".join(errors))
+
+
+def fix_path(raw: str) -> Path:
+    """Models often double backslashes in Windows/UNC paths. Collapse them,
+    keeping the leading \\\\ of a network path."""
+    s = str(raw).strip().strip('"')
+    unc = s.startswith("\\\\")
+    s = re.sub(r"\\{2,}", r"\\", s)
+    if unc:
+        s = "\\" + s if not s.startswith("\\\\") else s
+    return Path(s)
 
 
 def validate(spec: dict) -> dict:
@@ -59,7 +71,7 @@ def validate(spec: dict) -> dict:
         raise ValueError(f"unknown job type {job!r}")
     p = spec.setdefault("params", {})
     if job == "predict_names":
-        folder = Path(str(p.get("folder", "")))
+        folder = fix_path(p.get("folder", ""))
         if not folder.is_dir():
             raise ValueError(f"folder not found: {folder}")
         p["folder"] = str(folder)

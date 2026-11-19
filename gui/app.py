@@ -52,6 +52,7 @@ class App(tk.Tk):
         ttk.Button(top, text="Ingest Chrome YouTube history", command=self.ingest_chrome).pack(side="left", padx=4)
         ttk.Button(top, text="Notification inbox", command=self.open_inbox).pack(side="left", padx=12)
         ttk.Button(top, text="NLP pipelines (DeepSeek)", command=lambda: NLPWindow(self, self.notifications)).pack(side="left")
+        ttk.Button(top, text="Request… (tell it what to do)", command=lambda: __import__("gui.request_box", fromlist=["RequestBox"]).RequestBox(self, on_inbox=self.open_inbox)).pack(side="left")
         self.lbl_events = ttk.Label(top, text="events: 0"); self.lbl_events.pack(side="right")
 
         body = ttk.Panedwindow(self, orient="horizontal"); body.pack(fill="both", expand=True)

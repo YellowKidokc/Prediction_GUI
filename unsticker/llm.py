@@ -25,13 +25,31 @@ class Model:
     model: str
     key_env: str
 
+    fallback: "Model | None" = None
+
+    def with_fallback(self, other: "Model") -> "Model":
+        self.fallback = other
+        return self
+
     @property
     def ready(self) -> bool:
-        return bool(self.base_url and self.model and os.environ.get(self.key_env))
+        own = bool(self.base_url and self.model and os.environ.get(self.key_env))
+        return own or bool(self.fallback and self.fallback.ready)
 
-    def chat(self, system: str, user: str, *, temperature: float = 0.2,
-             max_tokens: int = 4000, timeout: int = 180) -> str:
-        if not self.ready:
+    def chat(self, system: str, user: str, **kw) -> str:
+        try:
+            return self._chat(system, user, **kw)
+        except Exception as exc:
+            if not (self.fallback and self.fallback.ready):
+                raise
+            try:
+                return self.fallback.chat(system, user, **kw)
+            except Exception as exc2:
+                raise RuntimeError(f"{redact(exc)} | fallback: {redact(exc2)}") from None
+
+    def _chat(self, system: str, user: str, *, temperature: float = 0.2,
+              max_tokens: int = 4000, timeout: int = 180) -> str:
+        if not (self.base_url and self.model and os.environ.get(self.key_env)):
             raise RuntimeError(f"model tier {self.name} not configured")
         body = json.dumps({
             "model": self.model, "temperature": temperature, "max_tokens": max_tokens,
@@ -77,7 +95,10 @@ def tiers() -> dict[str, Model]:
         # Jev = the cheap OpenRouter call. Set JEV_MODEL to the exact model you want.
         "jev": Model("jev", router, _env("JEV_MODEL", "~deepseek/deepseek-flash-latest"),
                      "OPENROUTER_API_KEY"),
-        "deepseek": deepseek,
+        # direct DeepSeek first; if it fails (e.g. out of balance), same model family via OpenRouter
+        "deepseek": deepseek.with_fallback(
+            Model("deepseek(openrouter)", router, _env("DEEPSEEK_ROUTER_MODEL", "deepseek/deepseek-v4-pro"),
+                  "OPENROUTER_API_KEY")),
         "top_writer": Model("opus", router, _env("TOP_WRITER_MODEL", "anthropic/claude-opus-5.5"),
                             "OPENROUTER_API_KEY"),
         "top_approver": Model("fable", router, _env("TOP_APPROVER_MODEL", "anthropic/claude-fable-5.2"),
