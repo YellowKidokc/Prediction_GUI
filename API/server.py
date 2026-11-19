@@ -17,7 +17,10 @@ from notifications.adapters.atoms import item_from_atom  # noqa: E402
 from notifications.adapters.series_registry import submit as submit_series  # noqa: E402
 from API.validation import decision as validate_decision, notification as validate_notification  # noqa: E402
 
-ENGINE = NotificationEngine(Runner().ledger)
+# Opening the review API does not discover, fit or run inference engines.
+from harness.ledger import Ledger
+from harness.runner import DB_PATH
+ENGINE = NotificationEngine(Ledger(os.environ.get('PREDICTION_LEDGER', DB_PATH)))
 MAX_BODY = 10 * 1024 * 1024
 
 
@@ -42,6 +45,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             body = self.data()
+            if self.path == "/v1/fis/plans":
+                from notifications.adapters.fis_plan import submit_plan
+                return self.reply(201, {'batch_id': submit_plan(ENGINE, body['plan'])})
+            if self.path == "/v1/fis/decide":
+                from notifications.adapters.fis_plan import decide
+                return self.reply(200, decide(ENGINE, body['plan'], body['rows'], body['decision'], body['actor'], body.get('note', '')))
             if self.path == "/v1/atoms/review":
                 item = item_from_atom(body)
                 batch_id = ENGINE.submit("approval_batch", f"Atom review: {item.subject}",

@@ -1,0 +1,1 @@
+Inference moved to David-OSv3 prediction.advice; GUI retains only notification presentation.

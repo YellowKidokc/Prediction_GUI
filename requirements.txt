@@ -1,3 +1,5 @@
+# Required canonical backend (immutable companion source revision).
+-r requirements-david-os.txt
 # Harness core, GUI and baselines need nothing beyond the standard library.
 # These are for the downloaded engines; any that fail to install just show as "not available".
 cpt

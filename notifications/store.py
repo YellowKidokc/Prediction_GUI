@@ -68,6 +68,20 @@ class NotificationStore:
 
     def decide(self, item_ids: Iterable[str], decision: str, actor: str = "David",
                note: str = "") -> int:
+        if decision not in {'approved', 'rejected', 'held', 'answered'} or not actor.strip():
+            raise ValueError('valid explicit decision and actor required')
+        item_ids = list(item_ids)
+        # Validate every selection before changing any status.
+        for item_id in item_ids:
+            row = self.conn.execute('SELECT payload,final_value,proposed_action FROM notification_items WHERE id=?', (item_id,)).fetchone()
+            if row is None:
+                raise ValueError('unknown notification item')
+            payload = json.loads(row['payload'])
+            if payload.get('fis_plan_hash') and decision == 'approved':
+                if payload.get('fis_flag'):
+                    raise ValueError('held FIS row cannot be approved')
+                if row['final_value'] and row['final_value'] != row['proposed_action']:
+                    raise ValueError('edited FIS name requires a new David-OS plan before approval')
         now, changed = utc_now(), 0
         for item_id in item_ids:
             cur = self.conn.execute(

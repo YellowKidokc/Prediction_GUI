@@ -1,0 +1,1 @@
+Inference moved to David-OSv3 prediction.series_registry; GUI retains only notification presentation.

@@ -23,10 +23,7 @@ class NotificationEngine:
         validate(template)
         batch = NotificationBatch(template, title, message, source, items, severity)
         batch_id = self.store.add(batch)
-        safe_ids = [item.id for item in items if may_auto_approve(item.payload)]
-        if safe_ids:
-            self.store.decide(safe_ids, "approved", actor="policy:auto-safe",
-                              note="High confidence; source explicitly marked read-only/additive and auto-approvable.")
+        # The GUI records explicit choices; confidence never authorizes work.
         if auto_advise and any(band(item.payload.get("confidence")) == "mixed" for item in items):
             def get_advice() -> None:
                 try:

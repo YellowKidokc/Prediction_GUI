@@ -5,3 +5,11 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 data/nlp/
+
+# Machine-specific configuration and credentials
+config.yaml
+.env
+.env.*
+!.env.example
+build/
+*.egg-info/

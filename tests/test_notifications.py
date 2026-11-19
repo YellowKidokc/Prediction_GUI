@@ -31,12 +31,12 @@ class NotificationEngineTests(unittest.TestCase):
         self.assertTrue(all(i["lifecycle_code"] == "RC" for i in self.engine.store.items(batch)))
         self.assertEqual(self.ledger.conn.execute("SELECT COUNT(*) FROM notification_decisions").fetchone()[0], 4)
 
-    def test_only_explicit_safe_work_auto_approves(self):
+    def test_gui_never_auto_approves_suggestions(self):
         batch = self.engine.submit(NotificationTemplate.APPROVAL_BATCH, "Tags", "Additive", "test", [
             NotificationItem("a.md", "add tag", payload={"confidence": .95, "risk_class": "additive", "auto_approvable": True}),
             NotificationItem("b.md", "rename", payload={"confidence": .99, "risk_class": "mutation", "auto_approvable": True}),
         ], desktop=False, auto_advise=False)
-        self.assertEqual([i["status"] for i in self.engine.store.items(batch)], ["approved", "pending"])
+        self.assertEqual([i["status"] for i in self.engine.store.items(batch)], ["pending", "pending"])
 
     def test_naming_plan_becomes_editable_mutation_rows(self):
         path = Path(tempfile.mkdtemp()) / "names.csv"

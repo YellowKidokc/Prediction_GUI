@@ -1,0 +1,9 @@
+# Copy to config.yaml; set DAVID_OS_CONFIG to its absolute filename to opt in.
+# Relative paths resolve against this file, never the process working directory.
+# Environment overrides take precedence. Do not put credentials in this file.
+paths:
+  state_dir: system
+  reference_db: system/db/reference.sqlite
+  lexicon: config/lexicon.xlsx
+  series_folder: data/series-registry
+  canon_rules: system/canon_rules.json
