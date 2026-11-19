@@ -28,6 +28,18 @@ JOB_TYPES = {
                           "default = parent of folder",
         },
     },
+    "find_scattered": {
+        "describe": "Read-only, no prediction engines. Finds the same paper scattered across many "
+                    "folders (matching by normalized name), checks which copies are identical vs. "
+                    "different versions, suggests one keeper per paper, and sends the families to "
+                    "the inbox. Nothing is moved or deleted.",
+        "fields": {
+            "folder": "absolute path of the tree to search (required)",
+            "match": "only papers whose name contains these words, e.g. 'God Is'; empty = all",
+            "extensions": "list of file types to consider, default [\".md\"]",
+            "limit": "max families to send, default 40",
+        },
+    },
 }
 
 SYSTEM = """You turn a user's plain-English request into ONE job spec for a local automation system.
@@ -81,4 +93,13 @@ def validate(spec: dict) -> dict:
         p["limit"] = max(1, min(int(p.get("limit") or 25), 200))
         p["naming_rule"] = p.get("naming_rule") or ""
         p["train_root"] = str(p.get("train_root") or (folder if p["kind"] == "folders" else folder.parent))
+    elif job == "find_scattered":
+        folder = fix_path(p.get("folder", ""))
+        if not folder.is_dir():
+            raise ValueError(f"folder not found: {folder}")
+        p["folder"] = str(folder)
+        p["match"] = str(p.get("match") or "")
+        ext = p.get("extensions") or [".md"]
+        p["extensions"] = [ext] if isinstance(ext, str) else list(ext)
+        p["limit"] = max(1, min(int(p.get("limit") or 40), 300))
     return spec

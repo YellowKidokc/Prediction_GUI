@@ -21,7 +21,8 @@ sys.path.insert(0, str(ROOT))
 from frontdoor.spec import translate, validate  # noqa: E402
 from unsticker.ladder import unstick             # noqa: E402
 
-JOB_MODULES = {"predict_names": "frontdoor.jobs.predict_names"}
+JOB_MODULES = {"predict_names": "frontdoor.jobs.predict_names",
+               "find_scattered": "frontdoor.jobs.find_scattered"}
 
 
 def main() -> int:
